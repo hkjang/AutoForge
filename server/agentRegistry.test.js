@@ -1,0 +1,6 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { createAgent, updateAgent } from './agentRegistry.js';
+test('agent registry creates an organization-scoped least-privilege definition',()=>{const db={agents:[]},agent=createAgent(db,{name:'Aero Reviewer',role:'aero',tools:['simulation.aero','evidence.read'],canReview:true},{organizationId:'o',actor:'u'});assert.equal(agent.organizationId,'o');assert.equal(agent.enabled,true);assert.deepEqual(agent.tools,['simulation.aero','evidence.read'])});
+test('agent registry rejects unknown tools and generation-review privilege conflicts',()=>{assert.throws(()=>createAgent({agents:[]},{name:'Bad',role:'aero',tools:['shell.root']},{organizationId:'o'}),e=>e.code==='agent_tool_not_allowed');assert.throws(()=>createAgent({agents:[]},{name:'Conflict',role:'safety',tools:['safety.review'],canGenerate:true,canReview:true},{organizationId:'o'}),e=>e.code==='agent_separation_of_duties')});
+test('agent registry updates activation and preserves separation of duties',()=>{const agent={id:'a',name:'Creator',role:'style',tools:['design.graph'],canGenerate:true,canReview:false,enabled:true};updateAgent(agent,{enabled:false},{actor:'admin'});assert.equal(agent.enabled,false);assert.throws(()=>updateAgent(agent,{canReview:true},{actor:'admin'}),e=>e.code==='agent_separation_of_duties')});

@@ -1,0 +1,31 @@
+name: quality
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  test-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run lint:server
+      - run: npm test
+      - run: npm run test:e2e
+      - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:browser
+      - run: npm audit --audit-level=high
+      - name: Smoke test production server
+        run: |
+          AUTOFORGE_DATA_DIR=/tmp/autoforge-ci PORT=4174 node server/index.js &
+          server_pid=$!
+          trap 'kill $server_pid' EXIT
+          for i in {1..20}; do curl -fsS http://127.0.0.1:4174/api/ready && break; sleep 0.5; done
+          curl -fsS http://127.0.0.1:4174/api/health

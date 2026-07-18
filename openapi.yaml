@@ -1,0 +1,401 @@
+openapi: 3.1.0
+info:
+  title: AutoForge Core API
+  version: 0.1.0
+  description: Autonomous vehicle engineering design, validation and governance API.
+servers:
+  - url: /api
+security:
+  - bearerAuth: []
+paths:
+  /mcp:
+    servers: [ { url: / } ]
+    post:
+      summary: MCP 2025-11-25 Streamable HTTP JSON-RPC endpoint
+      parameters:
+        - { name: Mcp-Session-Id, in: header, required: false, schema: { type: string } }
+        - { name: MCP-Protocol-Version, in: header, required: false, schema: { type: string, const: '2025-11-25' } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { oneOf: [ { $ref: '#/components/schemas/JsonRpcRequest' }, { type: array, items: { $ref: '#/components/schemas/JsonRpcRequest' } } ] }
+      responses:
+        '200': { description: JSON-RPC response }
+        '202': { description: Notification accepted }
+        '401': { description: Authentication required }
+        '403': { description: Origin rejected }
+    get:
+      summary: SSE listener not enabled
+      responses: { '405': { description: Request-response deployment } }
+    delete:
+      summary: Terminate MCP session
+      responses: { '204': { description: Session terminated }, '404': { description: Session unavailable } }
+  /health:
+    get:
+      security: []
+      summary: Process health
+      responses: { '200': { description: Healthy } }
+  /openapi.yaml:
+    get:
+      security: []
+      summary: Download the authoritative OpenAPI 3.1 contract
+      responses:
+        '200':
+          description: OpenAPI YAML document
+          content: { application/yaml: { schema: { type: string } } }
+  /ready:
+    get:
+      security: []
+      summary: Dependency readiness
+      responses: { '200': { description: Ready }, '503': { description: Not ready } }
+  /auth/login:
+    post:
+      security: []
+      summary: Create user session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties: { email: { type: string, format: email }, password: { type: string, format: password } }
+      responses: { '200': { description: Authenticated }, '401': { description: Invalid credentials } }
+  /projects:
+    get:
+      summary: List accessible projects
+      responses: { '200': { description: Project list } }
+    post:
+      summary: Create project
+      responses: { '201': { description: Project created }, '403': { description: Forbidden } }
+  /projects/{id}/graph:
+    get:
+      summary: Read complete design graph
+      parameters: [ { name: id, in: path, required: true, schema: { type: string } } ]
+      responses: { '200': { description: Design graph }, '404': { description: Project unavailable } }
+  /architectures:
+    get:
+      summary: List immutable vehicle architecture revisions for an accessible project
+      responses: { '200': { description: Architecture revision history } }
+    post:
+      summary: Validate and persist a new component-and-interface graph revision
+      responses: { '201': { description: Hashed architecture revision with lineage and validation }, '400': { description: Invalid graph }, '404': { description: Project unavailable } }
+  /designs/{designId}/variants:
+    post:
+      summary: Generate diverse concept revisions with metrics and immutable parent lineage
+      parameters: [ { name: designId, in: path, required: true, schema: { type: string } } ]
+      responses: { '201': { description: One to six persisted concept variants }, '404': { description: Parent design unavailable } }
+  /loops:
+    get:
+      summary: List project-scoped autonomous development loops
+      responses: { '200': { description: Accessible project loop state } }
+  /loops/{id}/step:
+    post:
+      summary: Advance one authorized project loop iteration
+      parameters: [ { name: id, in: path, required: true, schema: { type: string } } ]
+      responses: { '200': { description: Loop advanced }, '404': { description: Loop unavailable }, '409': { description: Iteration limit reached } }
+  /agents:
+    get:
+      summary: List organization-scoped engineering agent definitions
+      responses: { '200': { description: Accessible agent registry } }
+    post:
+      summary: Create a least-privilege agent definition
+      responses: { '201': { description: Agent created }, '400': { description: Invalid role, tool or separation policy }, '403': { description: Agent management permission required } }
+  /agents/catalog:
+    get:
+      summary: List allowlisted agent roles, tools and model references
+      responses: { '200': { description: Agent policy catalog } }
+  /agents/{agentId}:
+    patch:
+      summary: Update activation, model, prompt or least-privilege tool assignment
+      parameters: [ { name: agentId, in: path, required: true, schema: { type: string } } ]
+      responses: { '200': { description: Agent updated }, '404': { description: Agent unavailable }, '409': { description: Policy conflict } }
+  /compliance/assessments:
+    get:
+      summary: List immutable internal pre-compliance evidence for an accessible project and design
+      parameters: [ { $ref: '#/components/parameters/ProjectIdQuery' }, { name: designId, in: query, schema: { type: string } } ]
+      responses: { '200': { description: Internal pre-compliance assessment history, not an official certification } }
+  /compliance/assess:
+    post:
+      summary: Evaluate engineering evidence against internal pre-compliance controls
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [projectId, designId]
+              properties: { projectId: { type: string }, designId: { type: string } }
+              additionalProperties: false
+      responses: { '201': { description: Hashed internal assessment with rule-level evidence IDs and non-certification notice }, '403': { description: Safety execution permission required }, '404': { description: Project or design unavailable } }
+  /projects/{id}/knowledge-graph:
+    get:
+      summary: Read traceability knowledge graph
+      parameters: [ { name: id, in: path, required: true, schema: { type: string } } ]
+      responses: { '200': { description: Knowledge graph } }
+  /requirements/refine:
+    post:
+      summary: Convert natural language to structured requirements
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/RequirementTextInput' } } }
+      responses: { '200': { description: Requirements, ambiguities and conflicts }, '403': { $ref: '#/components/responses/Forbidden' } }
+  /requirements:
+    get:
+      summary: List every requirement revision accessible to the actor
+      parameters: [ { $ref: '#/components/parameters/ProjectIdQuery' } ]
+      responses: { '200': { description: Requirement revision list } }
+    post:
+      summary: Create a manually structured requirement draft
+      responses: { '201': { description: Requirement draft created }, '403': { $ref: '#/components/responses/Forbidden' } }
+  /requirements/drafts:
+    post:
+      summary: Persist structured drafts from a natural-language vehicle brief
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/RequirementTextInput' } } }
+      responses:
+        '201':
+          description: Draft batch with ambiguity and conflict analysis
+          content: { application/json: { schema: { $ref: '#/components/schemas/RequirementDraftBatch' } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /requirements/{id}/approve:
+    patch:
+      summary: Independently approve a requirement draft for baselining
+      parameters: [ { $ref: '#/components/parameters/RequirementId' } ]
+      responses: { '200': { description: Approved requirement }, '409': { description: Draft state or hard-conflict rejection } }
+  /requirements/{id}/revisions:
+    post:
+      summary: Create a new draft revision while preserving logical lineage
+      parameters: [ { $ref: '#/components/parameters/RequirementId' } ]
+      responses: { '201': { description: Draft revision and field-level diff }, '400': { $ref: '#/components/responses/BadRequest' } }
+  /requirements/{id}/verification:
+    patch:
+      summary: Record evidence-backed pass or fail against the active baseline
+      parameters: [ { $ref: '#/components/parameters/RequirementId' } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status, evidenceId]
+              properties: { status: { type: string, enum: [pass, fail] }, evidenceId: { type: string, minLength: 1 } }
+              additionalProperties: false
+      responses: { '200': { description: Verification and closed revalidation tasks }, '409': { description: Baseline gate, missing evidence, unknown evidence, or category-incompatible evidence rejection } }
+  /requirement-baselines:
+    get:
+      summary: List immutable requirement baselines and impact records
+      parameters: [ { $ref: '#/components/parameters/ProjectIdQuery' } ]
+      responses: { '200': { description: Requirement baseline list } }
+    post:
+      summary: Activate an approved, conflict-free, SHA-256-hashed baseline
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [projectId, requirementIds]
+              properties: { projectId: { type: string }, requirementIds: { type: array, minItems: 1, uniqueItems: true, items: { type: string } } }
+              additionalProperties: false
+      responses: { '201': { description: Baseline plus change impact and revalidation tasks }, '409': { description: Approval, conflict, or empty-baseline rejection } }
+  /verification-tasks:
+    get:
+      summary: List revalidation work generated by requirement baseline changes
+      parameters: [ { $ref: '#/components/parameters/ProjectIdQuery' } ]
+      responses: { '200': { description: Verification task list } }
+  /designs/estimate:
+    post:
+      summary: Estimate range, cost, drag, weight and score
+      responses: { '200': { description: Vehicle estimate } }
+  /designs/{designId}/cad:
+    post:
+      summary: Generate parametric OpenSCAD and OBJ vehicle artifacts
+      parameters: [ { name: designId, in: path, required: true, schema: { type: string } } ]
+      responses:
+        '201': { description: CAD engine execution and content-addressed artifacts }
+        '404': { description: Design unavailable }
+        '422': { description: CAD worker failed }
+  /runs:
+    get:
+      summary: List tenant-scoped autonomous runs with current terminal and gate status
+      parameters: [ { $ref: '#/components/parameters/ProjectIdQuery' } ]
+      responses: { '200': { description: Run history including parent and resumed run lineage } }
+    post:
+      summary: Start autonomous design workflow
+      responses: { '201': { description: Workflow accepted } }
+  /runs/{id}/resume:
+    post:
+      summary: Resume a blocked, failed or expert-review run as a lineage-linked execution
+      parameters: [ { name: id, in: path, required: true, schema: { type: string, format: uuid } } ]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties: { parameters: { type: object, additionalProperties: { type: number } }, reason: { type: string } }
+      responses: { '201': { description: Resumed child run }, '409': { description: Run is complete, running, or already resumed } }
+  /optimizations:
+    get:
+      summary: List tenant-scoped multi-objective optimization runs
+      responses: { '200': { description: Stored candidates, Pareto set and provenance } }
+    post:
+      summary: Generate constrained candidates and Pareto frontier
+      responses: { '201': { description: Reproducible optimization run }, '404': { description: Parent design unavailable } }
+  /optimizations/{runId}/candidates/{candidateId}/promote:
+    post:
+      summary: Promote a feasible optimization candidate to a design version
+      parameters:
+        - { name: runId, in: path, required: true, schema: { type: string } }
+        - { name: candidateId, in: path, required: true, schema: { type: string } }
+      responses: { '201': { description: Lineage-linked design version }, '409': { description: Candidate missing or infeasible } }
+  /runs/{id}/stream:
+    get:
+      summary: Subscribe to workflow events
+      parameters: [ { name: id, in: path, required: true, schema: { type: string } } ]
+      responses:
+        '200':
+          description: Server-sent event stream
+          content: { text/event-stream: { schema: { type: string } } }
+  /simulations:
+    get:
+      summary: List tenant-scoped simulation evidence
+      responses: { '200': { description: Simulation runs with fidelity, uncertainty and artifact IDs } }
+    post:
+      summary: Execute isolated reduced-order physics worker
+      responses: { '201': { description: Simulation, execution provenance and CSV/JSON artifacts }, '422': { description: Simulation failed } }
+  /calibrations:
+    get:
+      summary: List tenant-scoped Sim-to-Real model calibration lineage
+      responses: { '200': { description: Accessible calibration records } }
+    post:
+      summary: Calibrate a model from a project-scoped physical result
+      responses: { '201': { description: Calibration persisted }, '404': { description: Project unavailable } }
+  /physical-tests:
+    get:
+      summary: List tenant-scoped physical validation evidence
+      responses: { '200': { description: Physical test history } }
+    post:
+      summary: Record physical evidence and atomically calibrate its simulation model
+      responses: { '201': { description: Physical test and calibration persisted }, '404': { description: Project unavailable } }
+  /telemetry/streams:
+    get:
+      summary: List tenant-scoped calibrated sensor streams
+      responses: { '200': { description: Accessible sensor streams } }
+  /telemetry/latest:
+    get:
+      summary: Read latest measured values for a project vehicle twin
+      responses: { '200': { description: Latest signal values }, '404': { description: Project unavailable } }
+  /bom:
+    get:
+      summary: List the governed project component catalog
+      responses: { '200': { description: BOM items with quantities, cost, status and supplier links } }
+  /suppliers:
+    get:
+      summary: List the governed supplier catalog and quality risk attributes
+      responses: { '200': { description: Supplier catalog } }
+  /manufacturing/evaluations:
+    get:
+      summary: List tenant-scoped persisted DFM, cost and supply evaluations
+      responses: { '200': { description: Manufacturing evaluation history } }
+  /manufacturing/evaluate:
+    post:
+      summary: Evaluate a design against cost, assembly, DFM and supply constraints
+      responses: { '201': { description: Persisted evaluation and qualified alternatives }, '404': { description: Project unavailable } }
+  /artifacts:
+    get:
+      summary: List accessible artifacts
+      responses: { '200': { description: Artifact list } }
+    post:
+      summary: Store content-addressed artifact
+      responses: { '201': { description: Artifact stored } }
+  /robot/cells:
+    get:
+      summary: List tenant-scoped physical robot cells and interlock state
+      responses: { '200': { description: Accessible robot cells } }
+  /robot/commands:
+    get:
+      summary: List tenant-scoped robot command and acknowledgement history
+      responses: { '200': { description: Accessible robot commands } }
+  /robot/actions:
+    post:
+      summary: Submit an idempotent action with an approved S4 gate scoped to the exact cell
+      parameters: [ { name: Idempotency-Key, in: header, required: true, schema: { type: string, minLength: 1 } } ]
+      responses: { '202': { description: Action accepted }, '409': { description: Safety gate rejected } }
+  /robot/commands/{commandId}/ack:
+    post:
+      summary: Record an operator or ROS terminal acknowledgement
+      parameters: [ { name: commandId, in: path, required: true, schema: { type: string } } ]
+      responses: { '200': { description: Command acknowledgement recorded }, '404': { description: Command unavailable }, '409': { description: Invalid acknowledgement } }
+  /robot/cells/{cellId}/interlocks:
+    post:
+      summary: Record allowlisted physical interlock observations
+      parameters: [ { name: cellId, in: path, required: true, schema: { type: string } } ]
+      responses: { '200': { description: Interlocks recorded }, '404': { description: Cell unavailable }, '409': { description: Unknown or invalid interlock } }
+  /robot/cells/{cellId}/emergency-stop:
+    post:
+      summary: Idempotently stop a cell and cancel active physical commands
+      parameters:
+        - { name: cellId, in: path, required: true, schema: { type: string } }
+        - { name: Idempotency-Key, in: header, required: true, schema: { type: string, minLength: 1 } }
+      responses: { '200': { description: Emergency stop recorded }, '404': { description: Cell unavailable }, '409': { description: Stop rejected } }
+components:
+  parameters:
+    ProjectIdQuery: { name: projectId, in: query, required: false, schema: { type: string } }
+    RequirementId: { name: id, in: path, required: true, schema: { type: string, pattern: '^REQ-[0-9]+$' } }
+  responses:
+    BadRequest:
+      description: Invalid request
+      content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+    Forbidden:
+      description: Permission denied
+      content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+  securitySchemes:
+    bearerAuth: { type: http, scheme: bearer, bearerFormat: opaque-session-token }
+  schemas:
+    Error:
+      type: object
+      required: [error]
+      properties: { error: { type: string }, message: { type: string }, details: {} }
+    RequirementTextInput:
+      type: object
+      required: [projectId, text]
+      properties: { projectId: { type: string, minLength: 1 }, text: { type: string, minLength: 1 } }
+      additionalProperties: false
+    Requirement:
+      type: object
+      required: [id, logicalId, revision, projectId, title, lifecycleStatus, status]
+      properties:
+        id: { type: string }
+        logicalId: { type: string }
+        revision: { type: integer, minimum: 1 }
+        projectId: { type: string }
+        title: { type: string }
+        category: { type: string }
+        operator: { type: string }
+        target: { type: number }
+        unit: { type: string }
+        priority: { type: string }
+        lifecycleStatus: { type: string, enum: [draft, approved, baselined, superseded] }
+        status: { type: string, enum: [pending, pass, fail] }
+    RequirementDraftBatch:
+      type: object
+      required: [batchId, drafts, ambiguities, conflicts, readyForReview]
+      properties:
+        batchId: { type: string, format: uuid }
+        drafts: { type: array, items: { $ref: '#/components/schemas/Requirement' } }
+        ambiguities: { type: array, items: {} }
+        conflicts: { type: array, items: {} }
+        confidence: { type: number, minimum: 0, maximum: 1 }
+        readyForReview: { type: boolean }
+    JsonRpcRequest:
+      type: object
+      required: [jsonrpc, method]
+      properties:
+        jsonrpc: { type: string, const: '2.0' }
+        id: { oneOf: [ { type: string }, { type: integer }, { type: 'null' } ] }
+        method: { type: string, examples: [initialize, tools/list, tools/call] }
+        params: { type: object, additionalProperties: true }

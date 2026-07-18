@@ -1,0 +1,7 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { CURRENT_SCHEMA_VERSION, migrate, schemaStatus } from './migrations.js';
+
+test('legacy database migrates to current schema',()=>{const db={projects:[{id:'p'}],loops:[{id:'virtual'}],agents:[{id:'a',role:'safety'}],bom:[{partNo:'P'}],suppliers:[{id:'S'}]};const result=migrate(db,{clock:()=> '2026-01-01T00:00:00Z'});assert.equal(result.to,CURRENT_SCHEMA_VERSION);assert.equal(db.projects[0].organizationId,'org-autoforge');assert.ok(db.modelRegistry.length);assert.equal(db.migrationHistory.length,14);assert.ok(db.robotCells.length);assert.ok(db.manufacturingEvaluations);assert.ok(db.improvementRuns);assert.ok(db.designReleases);assert.ok(db.optimizationRuns);assert.ok(db.requirementBaselines);assert.ok(db.verificationTasks);assert.deepEqual(db.architectures,[]);assert.deepEqual(db.complianceAssessments,[]);assert.equal(db.loops[0].projectId,'urban-e04');assert.equal(db.loops[0].kind,'virtual');assert.equal(db.agents[0].organizationId,'org-autoforge');assert.equal(db.agents[0].canReview,true);assert.equal(db.bom[0].projectId,'urban-e04');assert.equal(db.bom[0].revision,1);assert.equal(db.suppliers[0].organizationId,'org-autoforge')});
+test('migrations are idempotent',()=>{const db={projects:[]};migrate(db);const second=migrate(db);assert.equal(second.applied.length,0);assert.equal(schemaStatus(db).compatible,true)});
+test('newer schema is rejected',()=>assert.throws(()=>migrate({schemaVersion:999}),/newer than supported/));

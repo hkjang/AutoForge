@@ -1,0 +1,33 @@
+{
+  "name": "autoforge-robotics",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "api": "node server/index.js",
+    "start": "node server/index.js",
+    "test": "node --test server/*.test.js",
+    "test:e2e": "node --test e2e/*.test.js",
+    "test:browser": "playwright test",
+    "backup:create": "node server/backup-cli.js create",
+    "backup:verify": "node server/backup-cli.js verify",
+    "backup:restore": "node server/backup-cli.js restore",
+    "lint:server": "for file in server/*.js; do node --check \"$file\" || exit 1; done",
+    "check": "npm run lint:server && npm test && npm run test:e2e && npm run build",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@vitejs/plugin-react": "latest",
+    "express": "latest",
+    "lucide-react": "latest",
+    "react": "latest",
+    "react-dom": "latest",
+    "typescript": "latest",
+    "vite": "latest"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.61.1"
+  }
+}

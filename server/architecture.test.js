@@ -1,0 +1,7 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { createArchitectureRevision, validateArchitecture } from './architecture.js';
+const nodes=[{id:'vcu',x:10,y:10,title:'VCU',type:'control'},{id:'bat',x:20,y:30,title:'Pack',type:'energy'},{id:'motor',x:40,y:30,title:'E-Axle',type:'drive'}],links=[['vcu','bat'],['bat','motor']];
+test('architecture validation normalizes a connected required-domain graph',()=>{const result=validateArchitecture({nodes,links});assert.equal(result.valid,true);assert.equal(result.links[0].from,'vcu');assert.equal(result.issues.length,0)});
+test('architecture revisions preserve immutable parent lineage and hash',()=>{const db={architectures:[],changes:[]},one=createArchitectureRevision(db,{projectId:'p',nodes,links,actor:'u'}),two=createArchitectureRevision(db,{projectId:'p',nodes:nodes.map(x=>x.id==='motor'?{...x,x:50}:x),links,actor:'u'});assert.equal(two.revision,2);assert.equal(two.parentId,one.id);assert.notEqual(two.sha256,one.sha256);assert.equal(db.changes[0].source,one.id)});
+test('invalid links, positions and missing critical domains fail or block validation',()=>{assert.throws(()=>validateArchitecture({nodes,links:[['vcu','missing']]}),e=>e.code==='architecture_link_invalid');assert.throws(()=>validateArchitecture({nodes:[{...nodes[0],x:120}],links:[]}),e=>e.code==='architecture_position_invalid');const incomplete=validateArchitecture({nodes:[nodes[0]],links:[]});assert.equal(incomplete.valid,false);assert.ok(incomplete.issues.some(x=>x.code==='missing_energy_domain'))});

@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.tmp/
+test-results/
+playwright-report/
+data/timeseries/
+data/autoforge.json
+data/autoforge.json.*
+data/artifacts/
+output/
+.gitframe/
