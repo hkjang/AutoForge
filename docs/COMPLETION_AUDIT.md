@@ -48,14 +48,14 @@
 
 ## 운영 품질 증거
 
-- 단위·모듈·API 계약 테스트 145개
+- 단위·모듈·API 계약 테스트 147개
 - 인증 운영 모드의 실행 스트림은 URL에 토큰을 노출하는 `EventSource` 대신 Authorization 헤더를 지원하는 Fetch 스트림과 부분 프레임 안전 SSE 파서를 사용한다.
 - 운영 서버가 `/api/openapi.yaml`에서 OpenAPI 3.1 계약을 제공하며, 요구사항 초안·승인·개정·기준선·증거 검증 경로는 구현과 문서의 동기화를 자동 검사한다.
 - 프로덕션 인증 모드 API 전체 여정 E2E 1개
 - 데스크톱·모바일 Chromium 브라우저 여정 4개(CI 필수 실행; 로컬은 Playwright 시스템 라이브러리 필요)
 - 서버 재시작 후 프로젝트·릴리스·아티팩트 영속성 확인
 - Vite 프로덕션 빌드
-- JSON 스키마 v14 마이그레이션, 백업 검증/복원, 콘텐츠 해시 무결성
+- JSON 스키마 v15 마이그레이션, 백업 검증/복원, 콘텐츠 해시 무결성
 - 보안 헤더, 일반/로그인 속도 제한, 5 MB 기본 JSON 제한, 안정적인 오류 envelope
 - GitHub Actions, Dockerfile, Compose, health/readiness/metrics
 

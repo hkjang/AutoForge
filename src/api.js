@@ -68,6 +68,7 @@ export const api={
   markNotification:id=>request(`/notifications/${id}/read`,{method:'PATCH',body:'{}'}),
   manufacturingEvaluate:body=>request('/manufacturing/evaluate',{method:'POST',body:JSON.stringify(body)}),
   bom:(projectId='urban-e04')=>request(`/bom?projectId=${encodeURIComponent(projectId)}`),
+  saveBomRevision:body=>request('/bom/revisions',{method:'POST',body:JSON.stringify(body)}),
   suppliers:()=>request('/suppliers'),
   manufacturingEvaluations:()=>request('/manufacturing/evaluations'),
   complianceAssessments:(projectId,designId)=>request(`/compliance/assessments?projectId=${encodeURIComponent(projectId)}${designId?`&designId=${encodeURIComponent(designId)}`:''}`),

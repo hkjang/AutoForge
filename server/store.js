@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 
 export const now = () => new Date().toISOString();
 export const db = {
-  organizations: [{id:'org-autoforge',name:'AutoForge Mobility Lab',slug:'autoforge'}], users: [], sessions: [], artifacts: [], sensorStreams: [], robotCommands: [], notifications: [], manufacturingEvaluations: [], complianceAssessments: [], improvementRuns: [], platformReleases: [], designReleases: [], engineExecutions: [], optimizationRuns: [], requirementBaselines: [], requirementVerifications: [], verificationTasks: [], architectures: [],
+  organizations: [{id:'org-autoforge',name:'AutoForge Mobility Lab',slug:'autoforge'}], users: [], sessions: [], artifacts: [], sensorStreams: [], robotCommands: [], notifications: [], manufacturingEvaluations: [], complianceAssessments: [], bomRevisions: [], improvementRuns: [], platformReleases: [], designReleases: [], engineExecutions: [], optimizationRuns: [], requirementBaselines: [], requirementVerifications: [], verificationTasks: [], architectures: [],
   robotCells: [{id:'CELL-A-01',projectId:'urban-e04',name:'Prototype Cell A',state:'idle',interlocks:{emergencyStop:true,cellClear:true,guardClosed:true,sensorsHealthy:true},updatedAt:now()}],
   projects: [{ id:'urban-e04', organizationId:'org-autoforge', code:'URBAN E04', name:'Urban Flow', status:'active', version:'0.8', updatedAt:now() }],
   requirements: [

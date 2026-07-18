@@ -20,6 +20,7 @@ const lifecycleRoutes=[
   ,['post','/api/robot/cells/:cellId/interlocks','/robot/cells/{cellId}/interlocks:']
   ,['post','/api/robot/cells/:cellId/emergency-stop','/robot/cells/{cellId}/emergency-stop:']
   ,['get','/api/bom','/bom:']
+  ,['post','/api/bom/revisions','/bom/revisions:']
   ,['get','/api/suppliers','/suppliers:']
   ,['get','/api/manufacturing/evaluations','/manufacturing/evaluations:']
   ,['post','/api/manufacturing/evaluate','/manufacturing/evaluate:']
